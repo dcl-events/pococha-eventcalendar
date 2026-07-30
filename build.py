@@ -9,6 +9,7 @@ today = datetime.date.today().isoformat()
 generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
 html = """<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pococha イベントカレンダー</title>
 <link rel="icon" href="assets/dcl_mark.png">
 <link rel="apple-touch-icon" href="assets/dcl_mark.png">
