@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 
 echo "===== $(date '+%Y-%m-%d %H:%M:%S') 取得開始 ====="
-python3 scrape_festivals.py "${1:-2}"   # 引数=開催後の取得ページ数(既定2)
+python3 scrape_festivals.py "${1:-2}"   # 引数=開催後を遡る月数(当月含む・既定2ヶ月・ローリング)
 python3 build.py
 
 if [[ -n "$(git status --porcelain)" ]]; then

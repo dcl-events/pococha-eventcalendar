@@ -13,7 +13,7 @@ Pococha 事務所主催イベントカレンダー。organizer-ope.pococha.com �
 
 | ファイル | 役割 |
 |---|---|
-| `scrape_festivals.py` | `/festivals` を全カテゴリ横断取得 → `festivals.json`（引数=開催後の取得ページ数, 既定2） |
+| `scrape_festivals.py` | `/festivals` を全カテゴリ横断取得 → `festivals.json`（引数=開催後を遡る月数, 当月含む・既定2ヶ月・ローリング。開催前/中/エントリーは全件） |
 | `build.py` | `festivals.json` → `docs/index.html`（自己完結HTML） |
 | `run.sh` | 取得→生成→commit&push（Pages自動デプロイ）。launchd 日次実行想定 |
 | `.github/workflows/deploy.yml` | `docs/` を GitHub Pages(Actions)へデプロイ |
@@ -21,8 +21,8 @@ Pococha 事務所主催イベントカレンダー。organizer-ope.pococha.com �
 ## 更新
 
 ```bash
-./run.sh        # 開催後2ページ
-./run.sh 10     # 開催後を10ページ遡る
+./run.sh        # 開催後は直近2ヶ月（既定・ローリング）
+./run.sh 6      # 開催後を6ヶ月遡る
 ```
 
 ## 認証
