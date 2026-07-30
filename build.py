@@ -114,6 +114,30 @@ h1{font-size:22px;font-weight:800;letter-spacing:.01em;margin:0}
 .bar.cont-l{border-left:none;border-top-left-radius:0;border-bottom-left-radius:0}
 .bar.cont-r{border-top-right-radius:0;border-bottom-right-radius:0}
 .more{position:absolute;font-size:10.5px;font-weight:700;color:var(--muted);pointer-events:auto;cursor:pointer;padding:0 6px}
+/* agenda (mobile) */
+.agenda{display:none;padding:6px}
+.aempty{color:var(--muted);text-align:center;padding:26px 10px;font-size:13px}
+.arow{display:block;width:100%;text-align:left;border:none;background:var(--surface);cursor:pointer;
+  border-left:4px solid;border-radius:9px;padding:10px 12px}
+.arow+.arow{margin-top:5px}
+.arow .atop{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.arow .adate{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.arow .acat{font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.arow .aname{display:block;font-size:14px;font-weight:600;color:var(--ink);line-height:1.45}
+.arow.up{border-color:var(--up);background:var(--up-bg)}
+.arow.entry{border-color:var(--entry);background:var(--entry-bg)}
+.arow.live{border-color:var(--live);background:var(--live-bg)}
+.arow.done{border-color:var(--done);background:var(--done-bg)}
+@media(max-width:640px){
+  .wrap{padding:20px 12px 60px}
+  h1{font-size:19px}
+  .gridbody{display:none}
+  .agenda{display:block}
+  .mhead{padding:13px 14px 6px}
+  .search{min-width:0;flex:1 1 100%;order:3}
+  .mbtn{min-width:110px;font-size:14px;padding:8px 10px}
+  .brandbar img{height:30px}
+}
 /* popover */
 .pop{position:fixed;inset:0;background:rgba(10,10,15,.4);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
 .pop.on{display:flex}
@@ -227,10 +251,12 @@ function renderMonth(y,mo,evs){
   const mStart=new Date(y,mo,1),mEnd=new Date(y,mo+1,0);
   const mc=evs.filter(e=>d0(e.start)<=mEnd&&d0(e.end)>=mStart).length;
   mDiv.innerHTML=`<div class="mhead"><h2>${mo+1}月</h2><span class="yr">${y}</span><span class="mct">${mc}件</span></div>`;
+  // --- PC: 月グリッド（.gridbody） ---
+  const grid=document.createElement('div');grid.className='gridbody';
   const dow=document.createElement('div');dow.className='dow';
   ['日','月','火','水','木','金','土'].forEach((d,i)=>{
     const c=document.createElement('div');c.textContent=d;if(i===0)c.className='sun';if(i===6)c.className='sat';dow.appendChild(c);});
-  mDiv.appendChild(dow);
+  grid.appendChild(dow);
 
   const first=new Date(y,mo,1);
   let ws=new Date(first);ws.setDate(1-first.getDay());
@@ -280,9 +306,37 @@ function renderMonth(y,mo,evs){
     const need=Math.min(lanes.length,MAXLANE)*22 + (Object.keys(overflow).length?16:0) + 30;
     week.querySelectorAll('.cell').forEach(c=>c.style.minHeight=Math.max(104,need)+'px');
     week.appendChild(lanesBox);
-    mDiv.appendChild(week);
+    grid.appendChild(week);
     ws.setDate(ws.getDate()+7);
   }
+  mDiv.appendChild(grid);
+
+  // --- スマホ: アジェンダ（日付順リスト・.agenda） ---
+  const md=iso=>{const d=d0(iso);return (d.getMonth()+1)+'/'+d.getDate()+'('+['日','月','火','水','木','金','土'][d.getDay()]+')';};
+  const agenda=document.createElement('div');agenda.className='agenda';
+  const list=evs.filter(e=>d0(e.start)<=mEnd&&d0(e.end)>=mStart)
+    .sort((a,b)=>d0(a.start)-d0(b.start)||(d0(b.end)-d0(a.end)));
+  if(!list.length){
+    const em=document.createElement('p');em.className='aempty';em.textContent='この月のイベントはありません';
+    agenda.appendChild(em);
+  }
+  list.forEach(e=>{
+    const c=CATS[e.category];
+    const row=document.createElement('button');row.className='arow '+c.cls;
+    const top=document.createElement('span');top.className='atop';
+    const dt=document.createElement('span');dt.className='adate';
+    const sd=e.start.slice(0,10),ed=e.end.slice(0,10);
+    dt.textContent=(sd===ed)?md(e.start):md(e.start)+'〜'+md(e.end);
+    const cat=document.createElement('span');cat.className='acat';
+    cat.textContent=LABEL[e.category];
+    cat.style.background='var('+c.v+'-bg)';cat.style.color='var('+c.v+')';
+    top.append(dt,cat);
+    const nm=document.createElement('span');nm.className='aname';nm.textContent=e.name;
+    row.append(top,nm);
+    row.onclick=()=>openPop(e);
+    agenda.appendChild(row);
+  });
+  mDiv.appendChild(agenda);
   return mDiv;
 }
 
