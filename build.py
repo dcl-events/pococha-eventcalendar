@@ -63,6 +63,29 @@ h1{font-size:22px;font-weight:800;letter-spacing:.01em;margin:0}
 .search{border:1px solid var(--line);background:var(--surface);color:var(--ink);
   border-radius:9px;padding:7px 11px;font-size:13px;min-width:190px;outline:none}
 .search:focus{border-color:var(--today)}
+.monthnav{display:flex;align-items:center;gap:8px;margin:2px 0 16px}
+.navbtn{width:36px;height:36px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:10px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
+.navbtn:hover:not(:disabled){border-color:var(--muted)}
+.navbtn:disabled{opacity:.3;cursor:default}
+.mselect{position:relative}
+.mbtn{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:10px;padding:8px 14px;font-size:15px;font-weight:800;cursor:pointer;min-width:150px;justify-content:center}
+.mbtn .chev{font-size:9px;color:var(--muted);font-weight:400}
+.mbtn:hover{border-color:var(--muted)}
+.mmenu{position:absolute;top:calc(100% + 6px);left:0;z-index:20;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;
+  max-height:320px;overflow-y:auto;min-width:100%}
+.mitem{display:flex;align-items:center;gap:12px;justify-content:space-between;white-space:nowrap;
+  border:none;background:transparent;color:var(--ink);border-radius:8px;padding:8px 12px;font-size:13.5px;
+  font-weight:600;cursor:pointer;width:100%;text-align:left}
+.mitem:hover{background:var(--line2)}
+.mitem[aria-current="true"]{background:var(--today);color:#fff}
+.mitem .mc{color:var(--muted);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.mitem[aria-current="true"] .mc{color:rgba(255,255,255,.85)}
+.todaybtn{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:10px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer}
+.todaybtn:hover{border-color:var(--today);color:var(--today)}
 .month{background:var(--surface);border:1px solid var(--line);border-radius:16px;
   box-shadow:var(--shadow);overflow:hidden;margin-bottom:22px}
 .mhead{display:flex;align-items:baseline;gap:10px;padding:15px 18px 12px}
@@ -110,16 +133,26 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;margin-top:26px;lin
   <div class="brandbar"><img src="assets/dcl_logo.png" alt="DeNA Creator Links"></div>
   <header class="top">
     <h1>Pococha イベントカレンダー</h1>
-    <span class="sub">全 <b id="total">0</b> 件 ・ organizer-ope 事務所主催イベント ・ 最終更新 <b id="gen"></b></span>
+    <span class="sub">全 <b id="total">0</b> 件 ・ 最終更新 <b id="gen"></b></span>
   </header>
   <div class="toolbar">
     <div class="filters" id="filters"></div>
     <div class="spacer"></div>
     <input class="search" id="search" placeholder="イベント名で絞り込み…">
   </div>
+  <nav class="monthnav">
+    <button id="prev" class="navbtn" aria-label="前の月">◀</button>
+    <div class="mselect">
+      <button id="mbtn" class="mbtn" aria-haspopup="true" aria-expanded="false">
+        <span id="mlabel">—</span><span class="chev">▼</span>
+      </button>
+      <div id="mmenu" class="mmenu" hidden></div>
+    </div>
+    <button id="next" class="navbtn" aria-label="次の月">▶</button>
+    <button id="today-btn" class="todaybtn">今日</button>
+  </nav>
   <div id="cal"></div>
   <footer>
-    バーをクリックで詳細 ・ 出典 organizer-ope.pococha.com ・ 全時刻 JST<br>
     DeNA Creator Links — Pocochaイベントカレンダー／毎日10:00 自動更新
   </footer>
 </div>
@@ -184,89 +217,133 @@ function openPop(ev){
   pop.classList.add('on');
 }
 
+const MAXLANE=5;
+let selKey=null;  // 選択中の月 "Y-M"
+const mkey=(y,mo)=>y+'-'+mo;
+
+function renderMonth(y,mo,evs){
+  const mDiv=document.createElement('div');mDiv.className='month';
+  const mStart=new Date(y,mo,1),mEnd=new Date(y,mo+1,0);
+  const mc=evs.filter(e=>d0(e.start)<=mEnd&&d0(e.end)>=mStart).length;
+  mDiv.innerHTML=`<div class="mhead"><h2>${mo+1}月</h2><span class="yr">${y}</span><span class="mct">${mc}件</span></div>`;
+  const dow=document.createElement('div');dow.className='dow';
+  ['日','月','火','水','木','金','土'].forEach((d,i)=>{
+    const c=document.createElement('div');c.textContent=d;if(i===0)c.className='sun';if(i===6)c.className='sat';dow.appendChild(c);});
+  mDiv.appendChild(dow);
+
+  const first=new Date(y,mo,1);
+  let ws=new Date(first);ws.setDate(1-first.getDay());
+  const monthEnd=new Date(y,mo+1,0);
+  while(ws<=monthEnd){
+    const week=document.createElement('div');week.className='week';
+    const days=[];
+    for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);days.push(d);
+      const cell=document.createElement('div');cell.className='cell';
+      if(d.getMonth()!==mo)cell.className+=' out';
+      if(key(d)===TODAY)cell.className+=' today';
+      cell.innerHTML=`<span class="dnum">${d.getDate()}</span>`;
+      week.appendChild(cell);
+    }
+    const wStart=days[0],wEnd=days[6];
+    const inWk=evs.filter(e=>d0(e.start)<=wEnd&&d0(e.end)>=wStart)
+      .sort((a,b)=>d0(a.start)-d0(b.start)||(d0(b.end)-d0(a.end)));
+    const lanes=[];const placed=[];
+    inWk.forEach(e=>{
+      let sCol=Math.max(0,Math.round((d0(e.start)-wStart)/DAY));
+      let eCol=Math.min(6,Math.round((d0(e.end)-wStart)/DAY));
+      let lane=0;while(lanes[lane]&&lanes[lane]>sCol)lane++;
+      lanes[lane]=eCol+1;
+      placed.push({e,sCol,eCol,lane,contL:d0(e.start)<wStart,contR:d0(e.end)>wEnd});
+    });
+    const lanesBox=document.createElement('div');lanesBox.className='lanes';
+    lanesBox.style.top='26px';
+    const overflow={};
+    placed.forEach(p=>{
+      if(p.lane>=MAXLANE){for(let c=p.sCol;c<=p.eCol;c++)overflow[c]=(overflow[c]||0)+1;return;}
+      const bar=document.createElement('div');
+      bar.className='bar '+CATS[p.e.category].cls+(p.contL?' cont-l':'')+(p.contR?' cont-r':'');
+      bar.style.left=`calc(${p.sCol}/7*100% + 3px)`;
+      bar.style.width=`calc(${(p.eCol-p.sCol+1)}/7*100% - 6px)`;
+      bar.style.top=(p.lane*22)+'px';
+      bar.textContent=(p.contL?'◀ ':'')+p.e.name;
+      bar.title=p.e.name;
+      bar.onclick=()=>openPop(p.e);
+      lanesBox.appendChild(bar);
+    });
+    Object.keys(overflow).forEach(c=>{
+      const m=document.createElement('div');m.className='more';
+      m.style.left=`calc(${c}/7*100% + 5px)`;m.style.top=(MAXLANE*22)+'px';
+      m.textContent='+'+overflow[c];
+      lanesBox.appendChild(m);
+    });
+    const need=Math.min(lanes.length,MAXLANE)*22 + (Object.keys(overflow).length?16:0) + 30;
+    week.querySelectorAll('.cell').forEach(c=>c.style.minHeight=Math.max(104,need)+'px');
+    week.appendChild(lanesBox);
+    mDiv.appendChild(week);
+    ws.setDate(ws.getDate()+7);
+  }
+  return mDiv;
+}
+
 function render(){
   const cal=document.getElementById('cal');cal.innerHTML='';
+  const mlabel=document.getElementById('mlabel');
   const evs=DATA.filter(e=>active.has(e.category) && (!query||e.name.toLowerCase().includes(query)));
-  if(!evs.length){cal.innerHTML='<p style="color:var(--muted);padding:30px;text-align:center">該当するイベントがありません</p>';return;}
-  // month range
+  if(!evs.length){
+    cal.innerHTML='<p style="color:var(--muted);padding:30px;text-align:center">該当するイベントがありません</p>';
+    mlabel.textContent='—';document.getElementById('mmenu').innerHTML='';
+    ['prev','next'].forEach(id=>document.getElementById(id).disabled=true);
+    return;
+  }
+  // 該当イベントがある月の一覧
   let min=d0(evs[0].start),max=d0(evs[0].end);
   evs.forEach(e=>{const s=d0(e.start),en=d0(e.end);if(s<min)min=s;if(en>max)max=en;});
-  const months=[];let cur=new Date(min.getFullYear(),min.getMonth(),1);
+  const avail=[];let cur=new Date(min.getFullYear(),min.getMonth(),1);
   const last=new Date(max.getFullYear(),max.getMonth(),1);
-  while(cur<=last){months.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
+  while(cur<=last){
+    const y=cur.getFullYear(),mo=cur.getMonth();
+    const s=new Date(y,mo,1),e2=new Date(y,mo+1,0);
+    const cnt=evs.filter(e=>d0(e.start)<=e2&&d0(e.end)>=s).length;
+    if(cnt>0)avail.push({y,mo,cnt,key:mkey(y,mo)});
+    cur.setMonth(cur.getMonth()+1);
+  }
+  // 選択月の決定（無効なら今月→なければ先頭）
+  let idx=avail.findIndex(a=>a.key===selKey);
+  if(idx<0){
+    const tp=TODAY.split('-');const tk=mkey(+tp[0],+tp[1]-1);
+    idx=avail.findIndex(a=>a.key===tk);
+    if(idx<0)idx=0;
+  }
+  selKey=avail[idx].key;
+  const sel=avail[idx];
 
-  months.forEach(m=>{
-    const y=m.getFullYear(),mo=m.getMonth();
-    const mDiv=document.createElement('div');mDiv.className='month';
-    // count events touching this month
-    const mStart=new Date(y,mo,1),mEnd=new Date(y,mo+1,0);
-    const mc=evs.filter(e=>d0(e.start)<=mEnd&&d0(e.end)>=mStart).length;
-    mDiv.innerHTML=`<div class="mhead"><h2>${mo+1}月</h2><span class="yr">${y}</span><span class="mct">${mc}件</span></div>`;
-    const dow=document.createElement('div');dow.className='dow';
-    ['日','月','火','水','木','金','土'].forEach((d,i)=>{
-      const c=document.createElement('div');c.textContent=d;if(i===0)c.className='sun';if(i===6)c.className='sat';dow.appendChild(c);});
-    mDiv.appendChild(dow);
-
-    // weeks (Sun start)
-    const first=new Date(y,mo,1);
-    let ws=new Date(first);ws.setDate(1-first.getDay());
-    const monthEnd=new Date(y,mo+1,0);
-    while(ws<=monthEnd){
-      const week=document.createElement('div');week.className='week';
-      const days=[];
-      for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);days.push(d);
-        const cell=document.createElement('div');cell.className='cell';
-        if(d.getMonth()!==mo)cell.className+=' out';
-        if(key(d)===TODAY)cell.className+=' today';
-        cell.innerHTML=`<span class="dnum">${d.getDate()}</span>`;
-        week.appendChild(cell);
-      }
-      // events overlapping this week
-      const wStart=days[0],wEnd=days[6];
-      const inWk=evs.filter(e=>d0(e.start)<=wEnd&&d0(e.end)>=wStart)
-        .sort((a,b)=>d0(a.start)-d0(b.start)||(d0(b.end)-d0(a.end)));
-      // lane packing
-      const lanes=[];const placed=[];
-      inWk.forEach(e=>{
-        let sCol=Math.max(0,Math.round((d0(e.start)-wStart)/DAY));
-        let eCol=Math.min(6,Math.round((d0(e.end)-wStart)/DAY));
-        let lane=0;while(lanes[lane]&&lanes[lane]>sCol)lane++;
-        lanes[lane]=eCol+1;
-        placed.push({e,sCol,eCol,lane,
-          contL:d0(e.start)<wStart,contR:d0(e.end)>wEnd});
-      });
-      const MAXLANE=3;
-      const lanesBox=document.createElement('div');lanesBox.className='lanes';
-      lanesBox.style.top='26px';
-      const overflow={};
-      placed.forEach(p=>{
-        if(p.lane>=MAXLANE){for(let c=p.sCol;c<=p.eCol;c++)overflow[c]=(overflow[c]||0)+1;return;}
-        const bar=document.createElement('div');
-        bar.className='bar '+CATS[p.e.category].cls+(p.contL?' cont-l':'')+(p.contR?' cont-r':'');
-        bar.style.left=`calc(${p.sCol}/7*100% + 3px)`;
-        bar.style.width=`calc(${(p.eCol-p.sCol+1)}/7*100% - 6px)`;
-        bar.style.top=(p.lane*22)+'px';
-        bar.textContent=(p.contL?'◀ ':'')+p.e.name;
-        bar.title=p.e.name;
-        bar.onclick=()=>openPop(p.e);
-        lanesBox.appendChild(bar);
-      });
-      Object.keys(overflow).forEach(c=>{
-        const m=document.createElement('div');m.className='more';
-        m.style.left=`calc(${c}/7*100% + 5px)`;m.style.top=(MAXLANE*22)+'px';
-        m.textContent='+'+overflow[c];
-        lanesBox.appendChild(m);
-      });
-      // set week min-height based on lanes
-      const need=Math.min(lanes.length,MAXLANE)*22 + (Object.keys(overflow).length?16:0) + 30;
-      week.querySelectorAll('.cell').forEach(c=>c.style.minHeight=Math.max(104,need)+'px');
-      week.appendChild(lanesBox);
-      mDiv.appendChild(week);
-      ws.setDate(ws.getDate()+7);
-    }
-    cal.appendChild(mDiv);
+  // ドロップダウン構築
+  const menu=document.getElementById('mmenu');menu.innerHTML='';
+  avail.forEach(a=>{
+    const b=document.createElement('button');b.className='mitem';
+    if(a.key===selKey)b.setAttribute('aria-current','true');
+    b.innerHTML=`<span>${a.y}年 ${a.mo+1}月</span><span class="mc">${a.cnt}件</span>`;
+    b.onclick=()=>{selKey=a.key;menu.hidden=true;document.getElementById('mbtn').setAttribute('aria-expanded','false');render();};
+    menu.appendChild(b);
   });
+  mlabel.textContent=`${sel.y}年 ${sel.mo+1}月`;
+  document.getElementById('prev').disabled=(idx===0);
+  document.getElementById('next').disabled=(idx===avail.length-1);
+  // prev/next の遷移先を保持
+  document.getElementById('prev').dataset.key=idx>0?avail[idx-1].key:'';
+  document.getElementById('next').dataset.key=idx<avail.length-1?avail[idx+1].key:'';
+
+  cal.appendChild(renderMonth(sel.y,sel.mo,evs));
 }
+
+// ナビ操作
+document.getElementById('prev').onclick=e=>{const k=e.currentTarget.dataset.key;if(k){selKey=k;render();}};
+document.getElementById('next').onclick=e=>{const k=e.currentTarget.dataset.key;if(k){selKey=k;render();}};
+document.getElementById('today-btn').onclick=()=>{const tp=TODAY.split('-');selKey=mkey(+tp[0],+tp[1]-1);render();};
+const mbtn=document.getElementById('mbtn'),mmenu=document.getElementById('mmenu');
+mbtn.onclick=()=>{const open=mmenu.hidden;mmenu.hidden=!open;mbtn.setAttribute('aria-expanded',open);};
+document.addEventListener('click',e=>{if(!e.target.closest('.mselect')){mmenu.hidden=true;mbtn.setAttribute('aria-expanded','false');}});
+
 render();
 </script>
 """
