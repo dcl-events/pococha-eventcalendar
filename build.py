@@ -177,7 +177,8 @@ const CATS = {
   "開催中":{cls:"live",v:"--live"}, "開催後":{cls:"done",v:"--done"}
 };
 const LABEL = {"開催前":"開催前","エントリー期間中":"エントリー中","開催中":"開催中","開催後":"開催後"};
-const active = new Set(Object.keys(CATS));
+// 既定は開催前/エントリー中/開催中のみ表示。開催後はチップをクリックで表示。
+const active = new Set(["開催前","エントリー期間中","開催中"]);
 let query = "";
 
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v);}
@@ -192,7 +193,7 @@ function fmt(iso){const [d,t]=iso.split('T');const [y,m,dd]=d.split('-');
 const counts={};DATA.forEach(e=>counts[e.category]=(counts[e.category]||0)+1);
 const fdiv=document.getElementById('filters');
 Object.keys(CATS).forEach(cat=>{
-  const c=document.createElement('button');c.className='chip';c.setAttribute('aria-pressed','true');
+  const c=document.createElement('button');c.className='chip';c.setAttribute('aria-pressed',active.has(cat));
   c.innerHTML=`<span class="dot" style="background:var(${CATS[cat].v})"></span>${LABEL[cat]}<span class="ct">${counts[cat]||0}</span>`;
   c.onclick=()=>{active.has(cat)?active.delete(cat):active.add(cat);
     c.setAttribute('aria-pressed',active.has(cat));render();};
