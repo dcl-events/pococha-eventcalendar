@@ -1,9 +1,10 @@
-# pococha-events
+# pococha-eventcalendar
 
 Pococha 事務所主催イベントカレンダー。organizer-ope.pococha.com の `/festivals`
 （開催前 / エントリー期間中 / 開催中 / 開催後）を取得し、月グリッド形式で公開する。
 
-- 公開URL: https://dcl-events.github.io/pococha-events/
+- 公開URL: https://dcl-events.github.io/pococha-eventcalendar/
+- **毎日10:00 自動更新**（launchd `com.sukeakiito.pococha-eventcalendar` → `run.sh`）
 - カテゴリ色分け（開催前=青 / エントリー中=琥珀 / 開催中=緑 / 開催後=グレー）
 - 複数日イベントはバーで横断表示、密集日は「+N」で集約、当日を強調
 - カテゴリフィルタ・イベント名検索・詳細ポップオーバー・ライト/ダーク対応

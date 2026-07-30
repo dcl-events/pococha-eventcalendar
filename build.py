@@ -10,6 +10,8 @@ generated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
 html = """<meta charset="utf-8">
 <title>Pococha イベントカレンダー</title>
+<link rel="icon" href="assets/dcl_mark.png">
+<link rel="apple-touch-icon" href="assets/dcl_mark.png">
 <style>
 :root{
   --bg:#f5f5f7; --surface:#ffffff; --ink:#1b1b20; --muted:#71717f;
@@ -42,6 +44,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;font-feature-settings:"palt";}
 .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+.brandbar{display:flex;justify-content:center;margin:2px 0 20px}
+.brandbar img{height:34px;width:auto}
 header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 16px;margin-bottom:6px}
 h1{font-size:22px;font-weight:800;letter-spacing:.01em;margin:0}
 .sub{color:var(--muted);font-size:12.5px}
@@ -103,9 +107,10 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;margin-top:26px;lin
 </style>
 
 <div class="wrap">
+  <div class="brandbar"><img src="assets/dcl_logo.png" alt="DeNA Creator Links"></div>
   <header class="top">
     <h1>Pococha イベントカレンダー</h1>
-    <span class="sub">全 <b id="total">0</b> 件 ・ organizer-ope 事務所主催イベント</span>
+    <span class="sub">全 <b id="total">0</b> 件 ・ organizer-ope 事務所主催イベント ・ 最終更新 <b id="gen"></b></span>
   </header>
   <div class="toolbar">
     <div class="filters" id="filters"></div>
@@ -114,8 +119,8 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;margin-top:26px;lin
   </div>
   <div id="cal"></div>
   <footer>
-    データ取得: <b id="gen"></b> ／ 出典: organizer-ope.pococha.com ・ 全時刻 JST<br>
-    バーをクリックで詳細。カテゴリは色で区別（開催前＝青・エントリー中＝琥珀・開催中＝緑・開催後＝グレー）。
+    バーをクリックで詳細 ・ 出典 organizer-ope.pococha.com ・ 全時刻 JST<br>
+    DeNA Creator Links — Pocochaイベントカレンダー／毎日10:00 自動更新
   </footer>
 </div>
 
