@@ -4,8 +4,22 @@
 import json, re, sys, time, html, urllib.request, os
 
 BASE = "https://organizer-ope.pococha.com"
-COOKIE = open(os.path.expanduser("~/Claude/pococha/.session")).read().strip()
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_cookie():
+    """Cookie は 環境変数 POCO_SESSION 優先（クラウド/Actions用）、
+    無ければローカルの ~/Claude/pococha/.session（ローカル実行用）。"""
+    env = os.environ.get("POCO_SESSION", "").strip()
+    if env:
+        return env
+    p = os.path.expanduser("~/Claude/pococha/.session")
+    if os.path.exists(p):
+        return open(p).read().strip()
+    raise SystemExit("Cookie未設定: 環境変数 POCO_SESSION か ~/Claude/pococha/.session を用意してください")
+
+
+COOKIE = load_cookie()
 
 FILTERS = {1: "開催前", 2: "エントリー期間中", 3: "開催中", 4: "開催後"}
 ROW_RE = re.compile(
@@ -104,6 +118,9 @@ def main():
     print(f"filter_type=4 {label4}: pages~{p} cutoff>={cutoff} new={cnt4}", file=sys.stderr)
 
     data = sorted(events.values(), key=lambda e: e["start"])
+    # Cookie切れ等でイベントが1件も取れない時は、既存JSONを壊さず異常終了
+    if not data:
+        raise SystemExit("取得0件: Cookieが切れている可能性（POCO_SESSION/.session を更新してください）")
     json.dump(data, open(os.path.join(HERE, "festivals.json"), "w"),
               ensure_ascii=False, indent=1)
     print(f"total unique events: {len(data)} (past cutoff {cutoff})", file=sys.stderr)

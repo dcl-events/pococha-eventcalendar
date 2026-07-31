@@ -1,0 +1,51 @@
+name: Update & deploy calendar (scheduled)
+
+# Mac が閉じていてもクラウド(GitHub)で毎日更新する。
+# 取得 → 生成 → データをコミット → Pages へ直接デプロイ、を1ジョブで完結。
+on:
+  schedule:
+    - cron: '0 1 * * *'   # 01:00 UTC = 10:00 JST（GitHub都合で多少前後する）
+  workflow_dispatch:        # 手動実行も可
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Scrape & build
+        env:
+          POCO_SESSION: ${{ secrets.POCO_SESSION }}
+        run: |
+          python3 scrape_festivals.py 2   # 開催後は直近2ヶ月ローリング
+          python3 build.py
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add festivals.json docs/index.html
+          if git diff --cached --quiet; then
+            echo "変更なし（コミットskip）"
+          else
+            git commit -m "chore: update events $(date -u +%Y-%m-%d)"
+            git push
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4
