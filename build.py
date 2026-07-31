@@ -155,7 +155,10 @@ footer{color:var(--muted);font-size:11.5px;text-align:center;margin-top:26px;lin
 </style>
 
 <div class="wrap">
-  <div class="brandbar"><img src="assets/dcl_logo.png" alt="DeNA Creator Links"></div>
+  <div class="brandbar"><picture>
+    <source srcset="assets/dcl_logo_dark.png" media="(prefers-color-scheme: dark)">
+    <img src="assets/dcl_logo.png" alt="DeNA Creator Links">
+  </picture></div>
   <header class="top">
     <h1>Pococha イベントカレンダー</h1>
     <span class="sub">全 <b id="total">0</b> 件 ・ 最終更新 <b id="gen"></b></span>
