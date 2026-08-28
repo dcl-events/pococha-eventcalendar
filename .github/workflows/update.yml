@@ -4,7 +4,10 @@ name: Update & deploy calendar (scheduled)
 # 取得 → 生成 → データをコミット → Pages へ直接デプロイ、を1ジョブで完結。
 on:
   schedule:
-    - cron: '0 1 * * *'   # 01:00 UTC = 10:00 JST（GitHub都合で多少前後する）
+    # GitHubのスケジュールは「毎時0分」がピーク混雑で遅延・ドロップされやすい。
+    # 非ゼロ分にし、予備時刻も置いて片方が落ちても更新されるようにする（実行は冪等）。
+    - cron: '18 22 * * *'   # 22:18 UTC ≈ 翌07:18 JST（遅延込みで午前中に着地狙い）
+    - cron: '18 3 * * *'    # 03:18 UTC ≈ 12:18 JST（取りこぼし時の予備）
   workflow_dispatch:        # 手動実行も可
 
 permissions:
